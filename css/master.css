@@ -46,3 +46,45 @@
 .selected{
   background-color: aliceblue;
 }
+
+body{
+ background-color: blanchedalmond;
+}
+
+.win-message{
+  position: absolute;
+  top: 182px;
+  border-radius: 10px;
+  right: 486px;
+  height: 200px;
+  width: 300px;
+  border: 1px solid aliceblue;
+  z-index: 1;
+  background-color: #000;
+  color: #FFF;
+  box-sizing: border-box;
+  display: none;
+}
+
+.win-message-container{
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.close-message-button{
+  font-family: monospace;
+  position: absolute;
+  right: 8px;
+  top: 0px;
+  cursor: pointer;
+}
+
+.message-content{
+  position: absolute;
+  top: 78px;
+  right: 47px;
+  display: block;
+  text-align: center;
+  width: 200px;
+}

@@ -4,12 +4,31 @@ const MoveResults = require('./constants/move_results');
 
 const View = function(mainEl){
   this.mainEl = mainEl;
+  creatWinMessage.call(this)
   this.chessBoardDisplay = mainEl.querySelector('.chess-board');
   this.board = new Board();
   setUpBoard.call(this);
   this.toMove = Colors.WHITE;
   this.startPos = null;
 };
+
+function creatWinMessage(){
+  this.winMessage = document.createElement('div');
+  this.winMessage.className = 'win-message';
+
+  let winMessageContainer = document.createElement('div');
+  winMessageContainer.className = 'win-message-container';
+  this.winMessage.appendChild(winMessageContainer);
+
+  winMessageContainer.innerHTML = "<span class='close-message-button'>x</span><span class='message-content'></span>";
+  let closeButton = winMessageContainer.firstChild
+  this.winMessageContent = winMessageContainer.lastChild
+  closeButton.addEventListener('click', () => {
+    this.winMessage.style.display = 'none';
+  })
+
+  this.mainEl.appendChild(this.winMessage);
+}
 
 function setUpBoard(){
   let html = '';
@@ -48,13 +67,14 @@ View.prototype.squareClick = function(pos){
     }
     else{
       let moveResult = this.move(pos);
-      if (moveResult === MoveResults.SUCCESS){
+      if (moveResult !== MoveResults.FAILURE){
         this.unselectPiece();
         this.render();
       }
-      else{
-        return moveResult;
+      if (moveResult === MoveResults.CHECKMATE){
+        this.renderWon();
       }
+      return moveResult;
     }
   }
 };
@@ -96,12 +116,18 @@ View.prototype.move = function(endPos){ //return successful move
   if (move_results === MoveResults.SUCCESS){
     this.changeToMove()
   }
-  
+
   return move_results;
 }
 
 View.prototype.changeToMove = function(){
   this.toMove = this.toMove === Colors.WHITE ? Colors.BLACK : Colors.WHITE;
+}
+
+View.prototype.renderWon = function(){
+  let message = `${this.toMove} WINS!`
+  this.winMessageContent.innerHTML = message;
+  this.winMessage.style.display = 'block';
 }
 
 

@@ -7,6 +7,7 @@ const King = require('./pieces/king');
 const Queen = require('./pieces/queen');
 const COLORS = require('./constants/colors');
 const MoveResults = require('./constants/move_results');
+const HelperMethods = require('./constants/helper_methods');
 
 const Board = function(){
   this.grid = new Array(8);
@@ -14,7 +15,7 @@ const Board = function(){
   for (let rowIdx = 0; rowIdx < 8; rowIdx++){
     this.grid[rowIdx] = new Array(8);
     for (let colIdx = 0; colIdx < 8; colIdx++){
-      this.grid[rowIdx][colIdx] = NullPiece;
+      this.grid[rowIdx][colIdx] = new NullPiece({row: rowIdx, col:colIdx});
     }
   }
 
@@ -25,6 +26,10 @@ const Board = function(){
   placeMajors.call(this, COLORS.WHITE, 7);
 
 };
+
+Board.prototype.flattenedGrid = function(){
+  return Array.prototype.concat.apply([], this.grid);
+}
 
 function placePawns(color, rowIdx){
   this.grid[rowIdx].forEach((_, colIdx) => {
@@ -63,21 +68,56 @@ Board.prototype.move = function(startCoords, endCoords){
 Board.prototype.actual_move = function(startCoords, endCoords){
   const movingPiece = this.getPiece(startCoords)
   movingPiece.hasMoved = true;
-  movingPiece.pos = endCoords;
 
-  this.grid[endCoords.row][endCoords.col] = movingPiece;
-  this.grid[startCoords.row][startCoords.col] = NullPiece;
+  this.movePiece(movingPiece, endCoords);
+  if (this.isInCheckMate(movingPiece.color)){
+    return MoveResults.CHECKMATE;
+  }
+
   return MoveResults.SUCCESS;
 };
 
+Board.prototype.isInCheckMate = function(checkingColor){
+  const checkedColor = checkingColor === COLORS.BLACK ? COLORS.WHITE : COLORS.BLACK;
+  if (!this.isInCheck(checkedColor)){
+    return false;
+  }
+
+  const moves = this.movesByColor(checkedColor);
+  const hasAValidMove = !moves.some((move) =>{
+    return !this.wouldBeInCheckAfterMove(move.startCoords, move.endCoords)
+  })
+
+  return hasAValidMove;
+};
+
+Board.prototype.movePiece = function(movingPiece, endCoords){
+  this.grid[movingPiece.pos.row][movingPiece.pos.col] = new NullPiece(movingPiece.pos);
+  movingPiece.pos = endCoords;
+  this.grid[endCoords.row][endCoords.col] = movingPiece;
+}
+
 Board.prototype.isValidMove = function(movingPiece, endCoords){
   if (!movingPiece.moves().some((move) => {
-    return (endCoords.row === move.row && endCoords.col === move.col);
+    return HelperMethods.arePositionsEqual(endCoords, move);
   })){
     return false;
   }
 
-  return true;
+  return !this.wouldBeInCheckAfterMove(movingPiece.pos, endCoords);
+}
+
+Board.prototype.wouldBeInCheckAfterMove = function(startCoords, endCoords){
+  const toPlaceBack = this.getPiece(endCoords);
+  const movingPiece = this.getPiece(startCoords);
+  this.movePiece(movingPiece, endCoords);
+
+  const inCheckAfterMove = this.isInCheck(movingPiece.color);
+
+  this.movePiece(movingPiece, startCoords);
+  this.movePiece(toPlaceBack, endCoords)
+
+  return inCheckAfterMove;
 }
 
 Board.prototype.renderPieces = function(squares){
@@ -95,6 +135,42 @@ Board.prototype.isInRange = function(pos){
   }
   else {
     return true;
+  }
+}
+
+Board.prototype.isInCheck = function(checkedColor){
+  const checkingColor = checkedColor === COLORS.BLACK ? COLORS.WHITE : COLORS.BLACK;
+  const checkingMoves = this.movesByColor(checkingColor);
+  const checkedKing = this.findKingByColor(checkedColor);
+
+  return checkingMoves.some((move) => {
+    return HelperMethods.arePositionsEqual(move.endCoords, checkedKing.pos);
+  })
+}
+
+Board.prototype.movesByColor = function(color){
+  let squares = this.flattenedGrid()
+  const totalMovesByColor = squares.reduce((totalMoves, square) =>{
+    if (square.color === color){
+      const endCoords = square.moves();
+      const moves = endCoords.map(function(endCoord){
+        return {startCoords: square.pos, endCoords: endCoord};
+      })
+
+      totalMoves = totalMoves.concat(moves)
+    }
+    return totalMoves;
+  }, [])
+
+  return totalMovesByColor;
+}
+
+Board.prototype.findKingByColor = function(color){
+  let squares = this.flattenedGrid()
+  for (let i = 0; i < squares.length; i++){
+    if (squares[i].constructor === King && squares[i].color === color){
+      return squares[i];
+    }
   }
 }
 

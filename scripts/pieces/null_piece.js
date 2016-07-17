@@ -1,9 +1,10 @@
 const ChessUnicode = require('../constants/pieces_unicode');
 const Colors = require('../constants/colors');
 
-const NullPiece = function(){
+const NullPiece = function(pos){
   this.symbol = '';
   this.color = 'none';
+  this.pos = pos;
 };
 
 NullPiece.prototype.moves = function(){
@@ -16,4 +17,4 @@ NullPiece.prototype.moves = function(){
 
 
 
-module.exports = new NullPiece();
+module.exports = NullPiece;
