@@ -70,6 +70,9 @@ Board.prototype.actual_move = function(startCoords, endCoords){
   movingPiece.hasMoved = true;
 
   this.movePiece(movingPiece, endCoords);
+  // if (movingPiece.constructor === Pawn){
+  //   if (endCoords.row === 8)
+  // }
   if (this.isInCheckMate(movingPiece.color)){
     return MoveResults.CHECKMATE;
   }

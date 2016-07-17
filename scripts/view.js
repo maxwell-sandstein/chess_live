@@ -10,6 +10,7 @@ const View = function(mainEl){
   setUpBoard.call(this);
   this.toMove = Colors.WHITE;
   this.startPos = null;
+  this.squareClickDisabled = false;
 };
 
 function creatWinMessage(){
@@ -57,6 +58,10 @@ View.prototype.render = function(){
 };
 
 View.prototype.squareClick = function(pos){
+  if (this.squareClickDisabled === true){
+    return;
+  }
+
   if (this.startPos === null){
     return this.selectPiece(pos);
   }
@@ -67,17 +72,28 @@ View.prototype.squareClick = function(pos){
     }
     else{
       let moveResult = this.move(pos);
-      if (moveResult !== MoveResults.FAILURE){
-        this.unselectPiece();
-        this.render();
+      // if(moveResult !== MoveResults.FAILURE && moveResult !== MoveResults.CHECKMATE
+      // && moveResult !== MoveResults.SUCCESS){ //pawn promotions position was returned
+      //   this.render()
+      //
+      // }
+      if (moveResult === MoveResults.SUCCESS){
+        this.renderMoveResult();
       }
       if (moveResult === MoveResults.CHECKMATE){
+        this.renderMoveResult()
         this.renderWon();
       }
       return moveResult;
     }
   }
 };
+
+View.prototype.renderMoveResult = function(){
+  this.unselectPiece();
+  this.render();
+  this.changeToMove();
+}
 
 View.prototype.selectPiece = function(pos){
   let piece = this.board.getPiece(pos)
@@ -113,9 +129,6 @@ View.prototype.removeSelectedClass = function(){
 
 View.prototype.move = function(endPos){ //return successful move
   const move_results = this.board.move(this.startPos, endPos);
-  if (move_results === MoveResults.SUCCESS){
-    this.changeToMove()
-  }
 
   return move_results;
 }
@@ -125,7 +138,8 @@ View.prototype.changeToMove = function(){
 }
 
 View.prototype.renderWon = function(){
-  let message = `${this.toMove} WINS!`
+  let winner = this.toMove === Colors.WHITE ? Colors.BLACK : Colors.WHITE;
+  let message = `${winner} WINS!`
   this.winMessageContent.innerHTML = message;
   this.winMessage.style.display = 'block';
 }
