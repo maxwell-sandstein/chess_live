@@ -1,5 +1,6 @@
 const Colors = require('./constants/colors');
 const Board = require('./board');
+const MoveResults = require('./constants/move_results');
 
 const View = function(mainEl){
   this.mainEl = mainEl;
@@ -47,7 +48,7 @@ View.prototype.squareClick = function(pos){
     }
     else{
       let moveResult = this.move(pos);
-      if (moveResult === 'successful move'){
+      if (moveResult === MoveResults.SUCCESS){
         this.unselectPiece();
         this.render();
       }
@@ -60,7 +61,7 @@ View.prototype.squareClick = function(pos){
 
 View.prototype.selectPiece = function(pos){
   let piece = this.board.getPiece(pos)
-  if (piece.constructor.color !== this.toMove.color){
+  if (piece.color !== this.toMove){
     return 'invalid selection'
   }
   else{
@@ -91,8 +92,16 @@ View.prototype.removeSelectedClass = function(){
 }
 
 View.prototype.move = function(endPos){ //return successful move
-  this.board.move(this.startPos, endPos);
-  return 'successful move';
+  const move_results = this.board.move(this.startPos, endPos);
+  if (move_results === MoveResults.SUCCESS){
+    this.changeToMove()
+  }
+  
+  return move_results;
+}
+
+View.prototype.changeToMove = function(){
+  this.toMove = this.toMove === Colors.WHITE ? Colors.BLACK : Colors.WHITE;
 }
 
 

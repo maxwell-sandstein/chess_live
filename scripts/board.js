@@ -6,6 +6,7 @@ const Pawn = require('./pieces/pawn');
 const King = require('./pieces/king');
 const Queen = require('./pieces/queen');
 const COLORS = require('./constants/colors');
+const MoveResults = require('./constants/move_results');
 
 const Board = function(){
   this.grid = new Array(8);
@@ -51,11 +52,33 @@ Board.prototype.getPiece = function(pos){
 };
 
 Board.prototype.move = function(startCoords, endCoords){
-  this.grid[startCoords.row][startCoords.col].pos = endCoords;
-
-  this.grid[endCoords.row][endCoords.col] = this.grid[startCoords.row][startCoords.col];
-  this.grid[startCoords.row][startCoords.col] = NullPiece;
+  const movingPiece = this.getPiece(startCoords)
+  if (this.isValidMove(movingPiece, endCoords)){
+    return this.actual_move(startCoords, endCoords);
+  } else{
+    return MoveResults.FAILURE;
+  }
 };
+
+Board.prototype.actual_move = function(startCoords, endCoords){
+  const movingPiece = this.getPiece(startCoords)
+  movingPiece.hasMoved = true;
+  movingPiece.pos = endCoords;
+
+  this.grid[endCoords.row][endCoords.col] = movingPiece;
+  this.grid[startCoords.row][startCoords.col] = NullPiece;
+  return MoveResults.SUCCESS;
+};
+
+Board.prototype.isValidMove = function(movingPiece, endCoords){
+  if (!movingPiece.moves().some((move) => {
+    return (endCoords.row === move.row && endCoords.col === move.col);
+  })){
+    return false;
+  }
+
+  return true;
+}
 
 Board.prototype.renderPieces = function(squares){
   this.grid.forEach(function(row, rowIdx){
@@ -65,5 +88,14 @@ Board.prototype.renderPieces = function(squares){
     });
   });
 };
+
+Board.prototype.isInRange = function(pos){
+  if (pos.row < 0 || pos.row > 7 || pos.col < 0 || pos.col > 7){
+    return false;
+  }
+  else {
+    return true;
+  }
+}
 
 module.exports = Board;

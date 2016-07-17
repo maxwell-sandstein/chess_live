@@ -1,12 +1,18 @@
 const ChessUnicode = require('../constants/pieces_unicode');
 const Colors = require('../constants/colors');
+const Deltas = require('../constants/deltas');
 
-const Queen = function(color, pos){
+const Queen = function(color, pos, board){
   this.color = color;
   this.pos = pos;
-    setUnicode.call(this);
+  this.board = board;
+  setUnicode.call(this);
+  this.deltas = Deltas.DIAGONALS.concat(Deltas.NOTDIAGONALS);
 };
 
+Queen.prototype.moves = Deltas.slidingMoves;
+
+Queen.prototype.checkDirection = Deltas.checkDirection;
 
 function setUnicode(){
   if (this.color === Colors.BLACK){
