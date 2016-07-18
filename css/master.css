@@ -88,3 +88,27 @@ body{
   text-align: center;
   width: 200px;
 }
+
+.pawn-conversion-tab{
+  position: absolute;
+  border-radius: 10px;
+  right: 486px;
+  height: 100px;
+  width: 300px;
+  border: 1px solid aliceblue;
+  z-index: 1;
+  background-color: #000;
+  color: #FFF;
+  box-sizing: border-box;
+  display: none;
+  top: 240px;
+}
+
+.pawn-conversion-piece{
+  display: block;
+  height: 100px;
+  padding: 15px;
+  text-align: center;
+  font-size: 44px;
+  cursor: pointer;
+}

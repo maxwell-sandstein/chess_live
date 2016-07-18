@@ -70,15 +70,46 @@ Board.prototype.actual_move = function(startCoords, endCoords){
   movingPiece.hasMoved = true;
 
   this.movePiece(movingPiece, endCoords);
-  // if (movingPiece.constructor === Pawn){
-  //   if (endCoords.row === 8)
-  // }
+  if (movingPiece.constructor === Pawn){
+    if (endCoords.row === 7 || endCoords.row === 0){
+      return endCoords;
+    }
+  }
   if (this.isInCheckMate(movingPiece.color)){
     return MoveResults.CHECKMATE;
   }
 
   return MoveResults.SUCCESS;
 };
+
+Board.prototype.makePromotion = function(pos, piece){
+  let pieceConstructor = this.determinePieceConstructor(piece)
+  const pawnToPromote = this.getPiece(pos)
+  this.grid[pos.row][pos.col] = new pieceConstructor(pawnToPromote.color, pos, this);
+  if (this.isInCheckMate(pawnToPromote.color)){
+    return MoveResults.CHECKMATE;
+  }
+  else{
+    return MoveResults.SUCCESS;
+  }
+}
+
+Board.prototype.determinePieceConstructor = function(piece){
+  switch (piece){
+    case 'Rook':{
+      return Rook;
+    }
+    case 'Knight':{
+      return Knight;
+    }
+    case 'Bishop':{
+      return Bishop;
+    }
+    case 'Queen':{
+      return Queen;
+    }
+  }
+}
 
 Board.prototype.isInCheckMate = function(checkingColor){
   const checkedColor = checkingColor === COLORS.BLACK ? COLORS.WHITE : COLORS.BLACK;

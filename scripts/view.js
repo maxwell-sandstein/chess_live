@@ -1,10 +1,12 @@
 const Colors = require('./constants/colors');
 const Board = require('./board');
 const MoveResults = require('./constants/move_results');
+const Unicode = require('./constants/pieces_unicode');
 
 const View = function(mainEl){
   this.mainEl = mainEl;
-  creatWinMessage.call(this)
+  createWinMessage.call(this);
+  createPawnConversionTab.call(this);
   this.chessBoardDisplay = mainEl.querySelector('.chess-board');
   this.board = new Board();
   setUpBoard.call(this);
@@ -13,7 +15,15 @@ const View = function(mainEl){
   this.squareClickDisabled = false;
 };
 
-function creatWinMessage(){
+function createPawnConversionTab(){
+  this.pawnConversionTab = document.createElement('div');
+  this.pawnConversionTab.className = 'pawn-conversion-tab';
+  this.mainEl.appendChild(this.pawnConversionTab);
+
+  this.pawnConversionTab.innerHTML = `<span class="pawn-conversion-piece">${Unicode.BLACK_ROOK}</span><span class="pawn-conversion-piece">${Unicode.BLACK_KNIGHT}</span><span class="pawn-conversion-piece">${Unicode.BLACK_BISHOP}</span><span class="pawn-conversion-piece">${Unicode.BLACK_QUEEN}</span>`
+}
+
+function createWinMessage(){
   this.winMessage = document.createElement('div');
   this.winMessage.className = 'win-message';
 
@@ -72,11 +82,11 @@ View.prototype.squareClick = function(pos){
     }
     else{
       let moveResult = this.move(pos);
-      // if(moveResult !== MoveResults.FAILURE && moveResult !== MoveResults.CHECKMATE
-      // && moveResult !== MoveResults.SUCCESS){ //pawn promotions position was returned
-      //   this.render()
-      //
-      // }
+      if(moveResult !== MoveResults.FAILURE && moveResult !== MoveResults.CHECKMATE
+      && moveResult !== MoveResults.SUCCESS){ //pawn promotions position was returned
+        this.render()
+        return this.demandPawnPromotion(moveResult);
+      }
       if (moveResult === MoveResults.SUCCESS){
         this.renderMoveResult();
       }
@@ -93,6 +103,28 @@ View.prototype.renderMoveResult = function(){
   this.unselectPiece();
   this.render();
   this.changeToMove();
+}
+
+View.prototype.demandPawnPromotion = function(pos){
+  this.squareClickDisabled = true;
+  let pieces = this.pawnConversionTab.children;
+  pieces[0].onclick = this.makePromotion.bind(this, pos, 'Rook');
+  pieces[1].onclick = this.makePromotion.bind(this, pos, 'Knight');
+  pieces[2].onclick = this.makePromotion.bind(this, pos, 'Bishop');
+  pieces[3].onclick = this.makePromotion.bind(this, pos, 'Queen');
+
+  this.pawnConversionTab.style.display = 'flex';
+}
+
+View.prototype.makePromotion = function(pos, chosenPiece){
+  const moveResult = this.board.makePromotion(pos, chosenPiece);
+  this.pawnConversionTab.style.display = 'none';
+  this.renderMoveResult();
+  if (moveResult === MoveResults.CHECKMATE){
+    return this.renderWon();
+  }
+
+  this.squareClickDisabled = false;
 }
 
 View.prototype.selectPiece = function(pos){
@@ -142,6 +174,7 @@ View.prototype.renderWon = function(){
   let message = `${winner} WINS!`
   this.winMessageContent.innerHTML = message;
   this.winMessage.style.display = 'block';
+  this.squareClickDisabled = true;
 }
 
 
