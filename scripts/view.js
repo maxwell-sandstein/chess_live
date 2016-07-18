@@ -9,13 +9,15 @@ const View = function(mainEl){
   createWinMessage.call(this);
   createPawnConversionTab.call(this);
 
+  createTimeQuestion.call(this);
   createClockDisplays.call(this);
   this.chessBoardDisplay = mainEl.querySelector('.chess-board');
   this.board = new Board();
   setUp.call(this);
   this.toMove = Colors.WHITE;
   this.startPos = null;
-  this.squareClickDisabled = false;
+  this.squareClickDisabled = true;
+
 };
 
 
@@ -28,6 +30,29 @@ function createClockDisplays(){
 
   this.mainEl.appendChild(this.whiteClockDisplay);
   this.mainEl.appendChild(this.blackClockDisplay);
+}
+
+function createTimeQuestion(){
+  this.timeQuestionTab = document.createElement('div');
+  this.timeQuestionTab.className = 'time-question-tab'
+  this.timeQuestionTab.innerHTML = '<div class="time-question-container"><span class="time-choices"></span></div>'
+  let timeChoiceBox = this.timeQuestionTab.firstChild.firstChild
+  const MINUTES = [5, 10, 15, 30]
+  timeChoiceBox.innerHTML = `<button class="time-choice">${MINUTES[0]} minutes</button><button class="time-choice">${MINUTES[1]} minutes</button><button class="time-choice">${MINUTES[2]} minutes</button><button class="time-choice">${MINUTES[3]} minutes</button>`
+  let timeChoices = timeChoiceBox.children
+  timeChoices[0].onclick = this.setUpClock.bind(this, MINUTES[0])
+  timeChoices[1].onclick = this.setUpClock.bind(this, MINUTES[1])
+  timeChoices[2].onclick = this.setUpClock.bind(this, MINUTES[2])
+  timeChoices[3].onclick = this.setUpClock.bind(this, MINUTES[3])
+
+  let direction = document.createElement('span');
+  direction.innerHTML = 'Choose A Play Clock!';
+  direction.className = 'time-direction';
+
+  timeChoiceBox.appendChild(direction);
+
+
+  this.mainEl.appendChild(this.timeQuestionTab);
 }
 
 function createPawnConversionTab(){
@@ -58,12 +83,13 @@ function createWinMessage(){
 
 function setUp(){
   setUpBoard.call(this);
-  setUpClock.call(this);
 }
 
-function setUpClock(){
-  this.whiteClock = new Clock(10, this.renderWon, this.whiteClockDisplay);
-  this.blackClock = new Clock(10, this.renderWon, this.blackClockDisplay);
+View.prototype.setUpClock = function(minutes){
+  this.squareClickDisabled = false;
+  this.timeQuestionTab.style.display = 'none';
+  this.whiteClock = new Clock(minutes, this.renderWon, this.whiteClockDisplay);
+  this.blackClock = new Clock(minutes, this.renderWon, this.blackClockDisplay);
 
   this.whiteClock.start();
 }
