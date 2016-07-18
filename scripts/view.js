@@ -2,18 +2,33 @@ const Colors = require('./constants/colors');
 const Board = require('./board');
 const MoveResults = require('./constants/move_results');
 const Unicode = require('./constants/pieces_unicode');
+const Clock = require('./clock');
 
 const View = function(mainEl){
   this.mainEl = mainEl;
   createWinMessage.call(this);
   createPawnConversionTab.call(this);
+
+  createClockDisplays.call(this);
   this.chessBoardDisplay = mainEl.querySelector('.chess-board');
   this.board = new Board();
-  setUpBoard.call(this);
+  setUp.call(this);
   this.toMove = Colors.WHITE;
   this.startPos = null;
   this.squareClickDisabled = false;
 };
+
+
+function createClockDisplays(){
+  this.blackClockDisplay = document.createElement('div');
+  this.blackClockDisplay.className = 'black-clock clock-display'
+
+  this.whiteClockDisplay = document.createElement('div');
+  this.whiteClockDisplay.className = 'white-clock clock-display'
+
+  this.mainEl.appendChild(this.whiteClockDisplay);
+  this.mainEl.appendChild(this.blackClockDisplay);
+}
 
 function createPawnConversionTab(){
   this.pawnConversionTab = document.createElement('div');
@@ -39,6 +54,23 @@ function createWinMessage(){
   })
 
   this.mainEl.appendChild(this.winMessage);
+}
+
+function setUp(){
+  setUpBoard.call(this);
+  setUpClock.call(this);
+}
+
+function setUpClock(){
+  this.whiteClock = new Clock(10, this.renderWon, this.whiteClockDisplay);
+  this.blackClock = new Clock(10, this.renderWon, this.blackClockDisplay);
+
+  this.whiteClock.start();
+}
+
+View.prototype.switchClockRunning = function(){
+  this.whiteClock.toggleRunning();
+  this.blackClock.toggleRunning();
 }
 
 function setUpBoard(){
@@ -100,6 +132,7 @@ View.prototype.squareClick = function(pos){
 };
 
 View.prototype.renderMoveResult = function(){
+  this.switchClockRunning();
   this.unselectPiece();
   this.render();
   this.changeToMove();
@@ -170,7 +203,8 @@ View.prototype.changeToMove = function(){
 }
 
 View.prototype.renderWon = function(){
-  let winner = this.toMove === Colors.WHITE ? Colors.BLACK : Colors.WHITE;
+  this.changeToMove();
+  let winner = this.toMove;
   let message = `${winner} WINS!`
   this.winMessageContent.innerHTML = message;
   this.winMessage.style.display = 'block';

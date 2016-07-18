@@ -112,3 +112,20 @@ body{
   font-size: 44px;
   cursor: pointer;
 }
+
+.clock-display{
+  font-weight: bold;
+  font-size: 32px;
+}
+
+.black-clock{
+  position: absolute;
+  top: 18px;
+  left: 226px;
+}
+
+.white-clock{
+  position: absolute;
+  top: 542px;
+  right: 226px;
+}
