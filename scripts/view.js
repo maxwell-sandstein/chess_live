@@ -88,8 +88,8 @@ function setUp(){
 View.prototype.setUpClock = function(minutes){
   this.squareClickDisabled = false;
   this.timeQuestionTab.style.display = 'none';
-  this.whiteClock = new Clock(minutes, this.renderWon, this.whiteClockDisplay);
-  this.blackClock = new Clock(minutes, this.renderWon, this.blackClockDisplay);
+  this.whiteClock = new Clock(minutes, this.renderWon.bind(this), this.whiteClockDisplay);
+  this.blackClock = new Clock(minutes, this.renderWon.bind(this), this.blackClockDisplay);
 
   this.whiteClock.start();
 }
