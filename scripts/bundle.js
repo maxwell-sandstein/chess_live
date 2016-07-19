@@ -61,9 +61,9 @@
 	
 	var Colors = __webpack_require__(2);
 	var Board = __webpack_require__(3);
-	var MoveResults = __webpack_require__(13);
+	var MoveResults = __webpack_require__(4);
 	var Unicode = __webpack_require__(5);
-	var Clock = __webpack_require__(15);
+	var Clock = __webpack_require__(6);
 	
 	var View = function View(mainEl) {
 	  this.mainEl = mainEl;
@@ -315,16 +315,16 @@
 
 	'use strict';
 	
-	var NullPiece = __webpack_require__(4);
-	var Bishop = __webpack_require__(6);
-	var Knight = __webpack_require__(8);
-	var Rook = __webpack_require__(9);
-	var Pawn = __webpack_require__(10);
-	var King = __webpack_require__(11);
-	var Queen = __webpack_require__(12);
+	var NullPiece = __webpack_require__(7);
+	var Bishop = __webpack_require__(8);
+	var Knight = __webpack_require__(10);
+	var Rook = __webpack_require__(11);
+	var Pawn = __webpack_require__(12);
+	var King = __webpack_require__(13);
+	var Queen = __webpack_require__(14);
 	var COLORS = __webpack_require__(2);
-	var MoveResults = __webpack_require__(13);
-	var HelperMethods = __webpack_require__(14);
+	var MoveResults = __webpack_require__(4);
+	var HelperMethods = __webpack_require__(15);
 	
 	var Board = function Board() {
 	  this.grid = new Array(8);
@@ -373,8 +373,86 @@
 	  return this.grid[pos.row][pos.col];
 	};
 	
+	Board.prototype.castle = function (king, endCoords) {
+	  //need to return success failure or checkmate
+	  if (king.color === COLORS.WHITE && endCoords.col === 6 && endCoords.row === 7 || king.color === COLORS.BLACK && endCoords.col === 6 && endCoords.row === 0) {
+	    return this.kingSideCastle(king);
+	  }
+	  if (king.color === COLORS.WHITE && endCoords.col === 2 && endCoords.row === 7 || king.color === COLORS.BLACK && endCoords.col === 2 && endCoords.row === 0) {
+	    return this.queenSideCastle(king);
+	  }
+	
+	  return MoveResults.FAILURE;
+	};
+	
+	Board.prototype.kingSideCastle = function (king) {
+	  var kingRow = king.pos.row;
+	
+	  var rook = this.getPiece({ row: kingRow, col: 7 });
+	  if (rook.hasMoved || king.hasMoved) {
+	    return MoveResults.FAILURE;
+	  }
+	  var bishopSquare = this.getPiece({ row: kingRow, col: 5 });
+	  var knightSquare = this.getPiece({ row: kingRow, col: 6 });
+	
+	  if (bishopSquare.constructor !== NullPiece || knightSquare.constructor !== NullPiece) {
+	    return MoveResults.FAILURE;
+	  }
+	
+	  if (this.isInCheck(king.color)) {
+	    return MoveResults.FAILURE;
+	  }
+	
+	  if (this.wouldBeInCheckAfterMove(king.pos, bishopSquare.pos)) {
+	    return MoveResults.FAILURE;
+	  }
+	
+	  if (this.wouldBeInCheckAfterMove(king.pos, knightSquare.pos)) {
+	    return MoveResults.FAILURE;
+	  }
+	
+	  this.movePiece(king, knightSquare.pos);
+	  return this.actual_move(rook.pos, bishopSquare.pos);
+	};
+	
+	Board.prototype.queenSideCastle = function (king) {
+	  var kingRow = king.pos.row;
+	  var rook = this.getPiece({ row: kingRow, col: 0 });
+	  if (rook.hasMoved || king.hasMoved) {
+	    return MoveResults.FAILURE;
+	  }
+	
+	  var queenSquare = this.getPiece({ row: kingRow, col: 3 });
+	  var bishopSquare = this.getPiece({ row: kingRow, col: 2 });
+	  var knightSquare = this.getPiece({ row: kingRow, col: 1 });
+	
+	  if (bishopSquare.constructor !== NullPiece || knightSquare.constructor !== NullPiece || queenSquare.constructor !== NullPiece) {
+	    return MoveResults.FAILURE;
+	  }
+	
+	  if (this.isInCheck(king.color)) {
+	    return MoveResults.FAILURE;
+	  }
+	
+	  if (this.wouldBeInCheckAfterMove(king.pos, bishopSquare.pos)) {
+	    return MoveResults.FAILURE;
+	  }
+	
+	  if (this.wouldBeInCheckAfterMove(king.pos, queenSquare.pos)) {
+	    return MoveResults.FAILURE;
+	  }
+	
+	  this.movePiece(king, bishopSquare.pos);
+	  return this.actual_move(rook.pos, queenSquare.pos);
+	};
+	
 	Board.prototype.move = function (startCoords, endCoords) {
 	  var movingPiece = this.getPiece(startCoords);
+	
+	  if (movingPiece.constructor === King && Math.abs(startCoords.col - endCoords.col) === 2 && startCoords.row === endCoords.row) {
+	    return this.castle(movingPiece, endCoords);
+	  }
+	
 	  if (this.isValidMove(movingPiece, endCoords)) {
 	    return this.actual_move(startCoords, endCoords);
 	  } else {
@@ -533,24 +611,17 @@
 
 /***/ },
 /* 4 */
-/***/ function(module, exports, __webpack_require__) {
+/***/ function(module, exports) {
 
 	'use strict';
 	
-	var ChessUnicode = __webpack_require__(5);
-	var Colors = __webpack_require__(2);
-	
-	var NullPiece = function NullPiece(pos) {
-	  this.symbol = '';
-	  this.color = 'none';
-	  this.pos = pos;
+	var MOVE_RESULTS = {
+	  SUCCESS: 'successful move',
+	  FAILURE: 'invalid move',
+	  CHECKMATE: 'checkmate'
 	};
 	
-	NullPiece.prototype.moves = function () {
-	  return [];
-	};
-	
-	module.exports = NullPiece;
+	module.exports = MOVE_RESULTS;
 
 /***/ },
 /* 5 */
@@ -577,13 +648,93 @@
 
 /***/ },
 /* 6 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	var Clock = function Clock(minutes, renderWon, clockDisplay) {
+	  //need 15:00 to render.  try to do this in her
+	  this.seconds = minutes * 60;
+	  this.renderWon = renderWon;
+	  this.isRunning = false;
+	  this.clockDisplay = clockDisplay;
+	  this.renderDisplay();
+	};
+	
+	Clock.prototype.start = function () {
+	  var _this = this;
+	
+	  this.isRunning = true;
+	  this.intervalId = setInterval(function () {
+	    _this.seconds--;
+	    _this.checkForExpiration();
+	    _this.renderDisplay();
+	  }, 1000);
+	};
+	
+	Clock.prototype.toggleRunning = function () {
+	  if (this.isRunning) {
+	    this.stop();
+	  } else {
+	    this.start();
+	  }
+	};
+	
+	Clock.prototype.stop = function () {
+	  this.isRunning = false;
+	  clearInterval(this.intervalId);
+	};
+	
+	Clock.prototype.renderDisplay = function () {
+	  var minutes = Math.floor(this.seconds / 60);
+	  var seconds = this.seconds % 60;
+	
+	  var minutesString = minutes > 0 ? "" + minutes : "" + 0;
+	  var secondsString = seconds > 9 ? "" + seconds : "0" + seconds;
+	  var displayString = minutesString + ":" + secondsString;
+	
+	  this.clockDisplay.innerHTML = displayString;
+	};
+	
+	Clock.prototype.checkForExpiration = function () {
+	  if (this.seconds <= 0) {
+	    this.stop();
+	    this.renderWon();
+	  }
+	};
+	
+	module.exports = Clock;
+
+/***/ },
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var ChessUnicode = __webpack_require__(5);
 	var Colors = __webpack_require__(2);
-	var Deltas = __webpack_require__(7);
+	
+	var NullPiece = function NullPiece(pos) {
+	  this.symbol = '';
+	  this.color = 'none';
+	  this.pos = pos;
+	};
+	
+	NullPiece.prototype.moves = function () {
+	  return [];
+	};
+	
+	module.exports = NullPiece;
+
+/***/ },
+/* 8 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+	
+	var ChessUnicode = __webpack_require__(5);
+	var Colors = __webpack_require__(2);
+	var Deltas = __webpack_require__(9);
 	
 	var Bishop = function Bishop(color, pos, board) {
 	  this.color = color;
@@ -608,7 +759,7 @@
 	module.exports = Bishop;
 
 /***/ },
-/* 7 */
+/* 9 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -670,14 +821,14 @@
 	module.exports = Deltas;
 
 /***/ },
-/* 8 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var ChessUnicode = __webpack_require__(5);
 	var Colors = __webpack_require__(2);
-	var Deltas = __webpack_require__(7);
+	var Deltas = __webpack_require__(9);
 	
 	var Knight = function Knight(color, pos, board) {
 	  this.color = color;
@@ -700,19 +851,20 @@
 	module.exports = Knight;
 
 /***/ },
-/* 9 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var ChessUnicode = __webpack_require__(5);
 	var Colors = __webpack_require__(2);
-	var Deltas = __webpack_require__(7);
+	var Deltas = __webpack_require__(9);
 	
 	var Rook = function Rook(color, pos, board) {
 	  this.color = color;
 	  this.pos = pos;
 	  this.board = board;
+	  this.hasMoved = false;
 	  setUnicode.call(this);
 	  this.deltas = Deltas.NOTDIAGONALS;
 	};
@@ -732,7 +884,7 @@
 	module.exports = Rook;
 
 /***/ },
-/* 10 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -834,19 +986,20 @@
 	module.exports = Pawn;
 
 /***/ },
-/* 11 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var ChessUnicode = __webpack_require__(5);
 	var Colors = __webpack_require__(2);
-	var Deltas = __webpack_require__(7);
+	var Deltas = __webpack_require__(9);
 	
 	var King = function King(color, pos, board) {
 	  this.color = color;
 	  this.pos = pos;
 	  this.board = board;
+	  this.hasMoved = false;
 	  setUnicode.call(this);
 	  this.stepDeltas = [{ row: 1, col: -1 }, { row: 1, col: 0 }, { row: 1, col: 1 }, { row: 0, col: -1 }, { row: 0, col: 1 }, { row: -1, col: -1 }, { row: -1, col: 0 }, { row: -1, col: 1 }];
 	};
@@ -864,14 +1017,14 @@
 	module.exports = King;
 
 /***/ },
-/* 12 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var ChessUnicode = __webpack_require__(5);
 	var Colors = __webpack_require__(2);
-	var Deltas = __webpack_require__(7);
+	var Deltas = __webpack_require__(9);
 	
 	var Queen = function Queen(color, pos, board) {
 	  this.color = color;
@@ -896,21 +1049,7 @@
 	module.exports = Queen;
 
 /***/ },
-/* 13 */
-/***/ function(module, exports) {
-
-	'use strict';
-	
-	var MOVE_RESULTS = {
-	  SUCCESS: 'successful move',
-	  FAILURE: 'invalid move',
-	  CHECKMATE: 'checkmate'
-	};
-	
-	module.exports = MOVE_RESULTS;
-
-/***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -922,65 +1061,6 @@
 	};
 	
 	module.exports = HelperMethods;
-
-/***/ },
-/* 15 */
-/***/ function(module, exports) {
-
-	"use strict";
-	
-	var Clock = function Clock(minutes, renderWon, clockDisplay) {
-	  //need 15:00 to render.  try to do this in her
-	  this.seconds = minutes * 60;
-	  this.renderWon = renderWon;
-	  this.isRunning = false;
-	  this.clockDisplay = clockDisplay;
-	  this.renderDisplay();
-	};
-	
-	Clock.prototype.start = function () {
-	  var _this = this;
-	
-	  this.isRunning = true;
-	  this.intervalId = setInterval(function () {
-	    _this.seconds--;
-	    _this.checkForExpiration();
-	    _this.renderDisplay();
-	  }, 1000);
-	};
-	
-	Clock.prototype.toggleRunning = function () {
-	  if (this.isRunning) {
-	    this.stop();
-	  } else {
-	    this.start();
-	  }
-	};
-	
-	Clock.prototype.stop = function () {
-	  this.isRunning = false;
-	  clearInterval(this.intervalId);
-	};
-	
-	Clock.prototype.renderDisplay = function () {
-	  var minutes = Math.floor(this.seconds / 60);
-	  var seconds = this.seconds % 60;
-	
-	  var minutesString = minutes > 0 ? "" + minutes : "" + 0;
-	  var secondsString = seconds > 9 ? "" + seconds : "0" + seconds;
-	  var displayString = minutesString + ":" + secondsString;
-	
-	  this.clockDisplay.innerHTML = displayString;
-	};
-	
-	Clock.prototype.checkForExpiration = function () {
-	  if (this.seconds <= 0) {
-	    this.stop();
-	    this.renderWon();
-	  }
-	};
-	
-	module.exports = Clock;
 
 /***/ }
 /******/ ]);

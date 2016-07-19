@@ -56,8 +56,95 @@ Board.prototype.getPiece = function(pos){
   return this.grid[pos.row][pos.col];
 };
 
+Board.prototype.castle = function(king, endCoords){ //need to return success failure or checkmate
+  if ((king.color === COLORS.WHITE && endCoords.col === 6 && endCoords.row === 7) ||
+      (king.color === COLORS.BLACK && endCoords.col === 6 && endCoords.row === 0)){
+    return this.kingSideCastle(king);
+  }
+  if ((king.color === COLORS.WHITE && endCoords.col === 2 && endCoords.row === 7) ||
+    (king.color === COLORS.BLACK && endCoords.col === 2 && endCoords.row === 0)) {
+    return this.queenSideCastle(king);
+  }
+
+  return MoveResults.FAILURE;
+}
+
+Board.prototype.kingSideCastle = function(king){
+  let kingRow = king.pos.row
+
+  let rook = this.getPiece({row: kingRow, col: 7});
+  if (rook.hasMoved || king.hasMoved){
+    return MoveResults.FAILURE;
+  }
+  let bishopSquare = this.getPiece({row: kingRow, col: 5})
+  let knightSquare = this.getPiece({row: kingRow, col: 6})
+
+  if (bishopSquare.constructor !== NullPiece || knightSquare.constructor!== NullPiece){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.isInCheck(king.color)){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.wouldBeInCheckAfterMove(king.pos, bishopSquare.pos)){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.wouldBeInCheckAfterMove(king.pos, knightSquare.pos)){
+    return MoveResults.FAILURE;
+  }
+
+  this.movePiece(king, knightSquare.pos);
+  return this.actual_move(rook.pos, bishopSquare.pos);
+}
+
+Board.prototype.queenSideCastle = function(king){
+  let kingRow = king.pos.row;
+  let rook = this.getPiece({row: kingRow, col: 0});
+  if (rook.hasMoved || king.hasMoved){
+    return MoveResults.FAILURE;
+  }
+
+  let queenSquare = this.getPiece({row: kingRow, col: 3})
+  let bishopSquare = this.getPiece({row: kingRow, col: 2})
+  let knightSquare = this.getPiece({row: kingRow, col: 1})
+
+
+
+
+
+
+  if (bishopSquare.constructor !== NullPiece || knightSquare.constructor!== NullPiece ||
+   queenSquare.constructor !== NullPiece){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.isInCheck(king.color)){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.wouldBeInCheckAfterMove(king.pos, bishopSquare.pos)){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.wouldBeInCheckAfterMove(king.pos, queenSquare.pos)){
+    return MoveResults.FAILURE;
+  }
+
+  this.movePiece(king, bishopSquare.pos);
+  return this.actual_move(rook.pos, queenSquare.pos);
+}
+
 Board.prototype.move = function(startCoords, endCoords){
   const movingPiece = this.getPiece(startCoords)
+
+  if (movingPiece.constructor === King &&
+    Math.abs(startCoords.col - endCoords.col) === 2 &&
+    startCoords.row === endCoords.row){
+    return this.castle(movingPiece, endCoords);
+  }
+
   if (this.isValidMove(movingPiece, endCoords)){
     return this.actual_move(startCoords, endCoords);
   } else{
