@@ -22,6 +22,3 @@
 
 # Ignore node modules
 node_modules
-
-# Ignore bundle
-bundle.js.map
