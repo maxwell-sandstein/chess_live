@@ -6,6 +6,7 @@ const King = function(color, pos, board){
   this.color = color;
   this.pos = pos;
   this.board = board;
+  this.hasMoved = false;
   setUnicode.call(this)
   this.stepDeltas = [
     {row: 1, col:-1},

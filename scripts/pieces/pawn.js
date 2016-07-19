@@ -3,6 +3,7 @@ const Colors = require('../constants/colors');
 
 const Pawn = function(color, pos, board){
   this.color = color;
+  this.enpassantOption = null;
   this.pos = pos;
   this.board = board
   this.hasMoved = false;

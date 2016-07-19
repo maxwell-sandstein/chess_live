@@ -6,6 +6,7 @@ const Rook = function(color, pos, board){
   this.color = color;
   this.pos = pos;
   this.board = board;
+  this.hasMoved = false;
   setUnicode.call(this);
   this.deltas = Deltas.NOTDIAGONALS;
 };

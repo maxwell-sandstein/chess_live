@@ -19,6 +19,8 @@ const Board = function(){
     }
   }
 
+  this.whitePawns = [];
+  this.blackPawns = [];
   placePawns.call(this, COLORS.BLACK, 1);
   placePawns.call(this, COLORS.WHITE, 6);
 
@@ -32,9 +34,20 @@ Board.prototype.flattenedGrid = function(){
 }
 
 function placePawns(color, rowIdx){
+  let pawnsArr = color === COLORS.WHITE ? this.whitePawns : this.blackPawns
+
   this.grid[rowIdx].forEach((_, colIdx) => {
     this.grid[rowIdx][colIdx] = new Pawn(color, {row: rowIdx, col: colIdx}, this);
+    pawnsArr.push(this.grid[rowIdx][colIdx]);
   });
+}
+
+Board.prototype.nullifyEnpassantOptions = function(colorJustMoved){
+  let pawnsArr = colorJustMoved === COLORS.WHITE ? this.whitePawns : this.blackPawns
+
+  pawnsArr.forEach(function(pawn){
+    pawn.enpassantOption = null;
+  })
 }
 
 function placeMajors(color, rowIdx){
@@ -56,30 +69,162 @@ Board.prototype.getPiece = function(pos){
   return this.grid[pos.row][pos.col];
 };
 
+Board.prototype.castle = function(king, endCoords){ //need to return success failure or checkmate
+  if ((king.color === COLORS.WHITE && endCoords.col === 6 && endCoords.row === 7) ||
+      (king.color === COLORS.BLACK && endCoords.col === 6 && endCoords.row === 0)){
+    return this.kingSideCastle(king);
+  }
+  if ((king.color === COLORS.WHITE && endCoords.col === 2 && endCoords.row === 7) ||
+    (king.color === COLORS.BLACK && endCoords.col === 2 && endCoords.row === 0)) {
+    return this.queenSideCastle(king);
+  }
+
+  return MoveResults.FAILURE;
+}
+
+Board.prototype.kingSideCastle = function(king){
+  let kingRow = king.pos.row
+
+  let rook = this.getPiece({row: kingRow, col: 7});
+  if (rook.hasMoved || king.hasMoved){
+    return MoveResults.FAILURE;
+  }
+  let bishopSquare = this.getPiece({row: kingRow, col: 5})
+  let knightSquare = this.getPiece({row: kingRow, col: 6})
+
+  if (bishopSquare.constructor !== NullPiece || knightSquare.constructor!== NullPiece){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.isInCheck(king.color)){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.wouldBeInCheckAfterMove(king.pos, bishopSquare.pos)){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.wouldBeInCheckAfterMove(king.pos, knightSquare.pos)){
+    return MoveResults.FAILURE;
+  }
+
+  this.movePiece(king, knightSquare.pos);
+  return this.actualMove(rook.pos, bishopSquare.pos);
+}
+
+Board.prototype.queenSideCastle = function(king){
+  let kingRow = king.pos.row;
+  let rook = this.getPiece({row: kingRow, col: 0});
+  if (rook.hasMoved || king.hasMoved){
+    return MoveResults.FAILURE;
+  }
+
+  let queenSquare = this.getPiece({row: kingRow, col: 3})
+  let bishopSquare = this.getPiece({row: kingRow, col: 2})
+  let knightSquare = this.getPiece({row: kingRow, col: 1})
+
+  if (bishopSquare.constructor !== NullPiece || knightSquare.constructor!== NullPiece ||
+   queenSquare.constructor !== NullPiece){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.isInCheck(king.color)){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.wouldBeInCheckAfterMove(king.pos, bishopSquare.pos)){
+    return MoveResults.FAILURE;
+  }
+
+  if (this.wouldBeInCheckAfterMove(king.pos, queenSquare.pos)){
+    return MoveResults.FAILURE;
+  }
+
+  this.movePiece(king, bishopSquare.pos);
+  return this.actualMove(rook.pos, queenSquare.pos);
+}
+
 Board.prototype.move = function(startCoords, endCoords){
   const movingPiece = this.getPiece(startCoords)
+
+  if (movingPiece.constructor === King &&
+    Math.abs(startCoords.col - endCoords.col) === 2 &&
+    startCoords.row === endCoords.row){
+    return this.castle(movingPiece, endCoords);
+  }
+
   if (this.isValidMove(movingPiece, endCoords)){
-    return this.actual_move(startCoords, endCoords);
+    return this.actualMove(startCoords, endCoords);
   } else{
+
+      if (movingPiece.constructor === Pawn && Math.abs(startCoords.col - endCoords.col) === 1){
+        return this.tryEnpassant(movingPiece, endCoords);
+      }
+
     return MoveResults.FAILURE;
   }
 };
 
-Board.prototype.actual_move = function(startCoords, endCoords){
+Board.prototype.tryEnpassant = function(pawn, endCoords){
+  if (pawn.enpassantOption === null){
+    return MoveResults.FAILURE;
+  }
+
+  if (HelperMethods.arePositionsEqual(endCoords, pawn.enpassantOption.move)){
+    let pawnTaken = pawn.enpassantOption.targetPawn
+    let pawnTakenPos = pawnTaken.pos;
+    this.grid[pawnTakenPos.row][pawnTakenPos.col] = new NullPiece(pawnTakenPos)
+
+    return this.actualMove(pawn.pos, endCoords);
+
+  } else{
+
+    return MoveResults.FAILURE;
+  }
+}
+
+Board.prototype.actualMove = function(startCoords, endCoords){
   const movingPiece = this.getPiece(startCoords)
   movingPiece.hasMoved = true;
+  this.nullifyEnpassantOptions(movingPiece.color);
 
   this.movePiece(movingPiece, endCoords);
+
   if (movingPiece.constructor === Pawn){
     if (endCoords.row === 7 || endCoords.row === 0){
       return endCoords;
     }
+
+    if (Math.abs(endCoords.row - startCoords.row) === 2){
+      let targetRow = startCoords.row > endCoords.row ? (endCoords.row + 1) : (startCoords.row + 1);
+      this.giveEnpassantOption(targetRow, endCoords);
+    }
   }
+
   if (this.isInCheckMate(movingPiece.color)){
     return MoveResults.CHECKMATE;
   }
 
   return MoveResults.SUCCESS;
+};
+
+Board.prototype.giveEnpassantOption = function(targetRow, endCoords){
+  let targetPawn = this.getPiece(endCoords)
+  if (endCoords.col > 0){
+    let leftPiece = this.getPiece({row: endCoords.row, col: endCoords.col - 1})
+    if (leftPiece.constructor === Pawn && leftPiece.color !== targetPawn.color){
+      leftPiece.enpassantOption = {targetPawn: targetPawn,
+        move: {row: targetRow, col: targetPawn.pos.col}}
+    }
+  }
+
+  if (endCoords.col < 7){
+    let rightPiece = this.getPiece({row: endCoords.row, col: endCoords.col + 1})
+    if (rightPiece.constructor === Pawn && rightPiece.color !== targetPawn.color){
+      rightPiece.enpassantOption = {targetPawn: targetPawn,
+        move: {row: targetRow, col: targetPawn.pos.col}}
+    }
+  }
 };
 
 Board.prototype.makePromotion = function(pos, piece){
