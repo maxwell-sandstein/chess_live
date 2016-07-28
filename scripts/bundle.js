@@ -61,9 +61,9 @@
 	
 	var Colors = __webpack_require__(2);
 	var Board = __webpack_require__(3);
-	var MoveResults = __webpack_require__(4);
+	var MoveResults = __webpack_require__(13);
 	var Unicode = __webpack_require__(5);
-	var Clock = __webpack_require__(6);
+	var Clock = __webpack_require__(15);
 	
 	var View = function View(mainEl) {
 	  this.mainEl = mainEl;
@@ -82,10 +82,10 @@
 	
 	function createClockDisplays() {
 	  this.blackClockDisplay = document.createElement('div');
-	  this.blackClockDisplay.className = 'black-clock clock-display';
+	  this.blackClockDisplay.className = 'just-moved-clock clock-display';
 	
 	  this.whiteClockDisplay = document.createElement('div');
-	  this.whiteClockDisplay.className = 'white-clock clock-display';
+	  this.whiteClockDisplay.className = 'to-move-clock clock-display';
 	
 	  this.mainEl.appendChild(this.whiteClockDisplay);
 	  this.mainEl.appendChild(this.blackClockDisplay);
@@ -219,6 +219,8 @@
 	  this.unselectPiece();
 	  this.render();
 	  this.changeToMove();
+	  this.flipBoard();
+	  this.flipClocks();
 	};
 	
 	View.prototype.demandPawnPromotion = function (pos) {
@@ -285,6 +287,15 @@
 	  this.toMove = this.toMove === Colors.WHITE ? Colors.BLACK : Colors.WHITE;
 	};
 	
+	View.prototype.flipBoard = function () {
+	  this.chessBoardDisplay.className = this.chessBoardDisplay.className === "chess-board" ? "chess-board black-to-move" : "chess-board";
+	};
+	
+	View.prototype.flipClocks = function () {
+	  this.whiteClockDisplay.className = this.whiteClockDisplay.className === "to-move-clock clock-display" ? "just-moved-clock clock-display" : "to-move-clock clock-display";
+	  this.blackClockDisplay.className = this.blackClockDisplay.className === "to-move-clock clock-display" ? "just-moved-clock clock-display" : "to-move-clock clock-display";
+	};
+	
 	View.prototype.renderWon = function () {
 	  this.changeToMove();
 	  var winner = this.toMove;
@@ -315,16 +326,16 @@
 
 	'use strict';
 	
-	var NullPiece = __webpack_require__(7);
-	var Bishop = __webpack_require__(8);
-	var Knight = __webpack_require__(10);
-	var Rook = __webpack_require__(11);
-	var Pawn = __webpack_require__(12);
-	var King = __webpack_require__(13);
-	var Queen = __webpack_require__(14);
+	var NullPiece = __webpack_require__(4);
+	var Bishop = __webpack_require__(6);
+	var Knight = __webpack_require__(8);
+	var Rook = __webpack_require__(9);
+	var Pawn = __webpack_require__(10);
+	var King = __webpack_require__(11);
+	var Queen = __webpack_require__(12);
 	var COLORS = __webpack_require__(2);
-	var MoveResults = __webpack_require__(4);
-	var HelperMethods = __webpack_require__(15);
+	var MoveResults = __webpack_require__(13);
+	var HelperMethods = __webpack_require__(14);
 	
 	var Board = function Board() {
 	  this.grid = new Array(8);
@@ -673,17 +684,24 @@
 
 /***/ },
 /* 4 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	var MOVE_RESULTS = {
-	  SUCCESS: 'successful move',
-	  FAILURE: 'invalid move',
-	  CHECKMATE: 'checkmate'
+	var ChessUnicode = __webpack_require__(5);
+	var Colors = __webpack_require__(2);
+	
+	var NullPiece = function NullPiece(pos) {
+	  this.symbol = '';
+	  this.color = 'none';
+	  this.pos = pos;
 	};
 	
-	module.exports = MOVE_RESULTS;
+	NullPiece.prototype.moves = function () {
+	  return [];
+	};
+	
+	module.exports = NullPiece;
 
 /***/ },
 /* 5 */
@@ -710,93 +728,13 @@
 
 /***/ },
 /* 6 */
-/***/ function(module, exports) {
-
-	"use strict";
-	
-	var Clock = function Clock(minutes, renderWon, clockDisplay) {
-	  //need 15:00 to render.  try to do this in her
-	  this.seconds = minutes * 60;
-	  this.renderWon = renderWon;
-	  this.isRunning = false;
-	  this.clockDisplay = clockDisplay;
-	  this.renderDisplay();
-	};
-	
-	Clock.prototype.start = function () {
-	  var _this = this;
-	
-	  this.isRunning = true;
-	  this.intervalId = setInterval(function () {
-	    _this.seconds--;
-	    _this.checkForExpiration();
-	    _this.renderDisplay();
-	  }, 1000);
-	};
-	
-	Clock.prototype.toggleRunning = function () {
-	  if (this.isRunning) {
-	    this.stop();
-	  } else {
-	    this.start();
-	  }
-	};
-	
-	Clock.prototype.stop = function () {
-	  this.isRunning = false;
-	  clearInterval(this.intervalId);
-	};
-	
-	Clock.prototype.renderDisplay = function () {
-	  var minutes = Math.floor(this.seconds / 60);
-	  var seconds = this.seconds % 60;
-	
-	  var minutesString = minutes > 0 ? "" + minutes : "" + 0;
-	  var secondsString = seconds > 9 ? "" + seconds : "0" + seconds;
-	  var displayString = minutesString + ":" + secondsString;
-	
-	  this.clockDisplay.innerHTML = displayString;
-	};
-	
-	Clock.prototype.checkForExpiration = function () {
-	  if (this.seconds <= 0) {
-	    this.stop();
-	    this.renderWon();
-	  }
-	};
-	
-	module.exports = Clock;
-
-/***/ },
-/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var ChessUnicode = __webpack_require__(5);
 	var Colors = __webpack_require__(2);
-	
-	var NullPiece = function NullPiece(pos) {
-	  this.symbol = '';
-	  this.color = 'none';
-	  this.pos = pos;
-	};
-	
-	NullPiece.prototype.moves = function () {
-	  return [];
-	};
-	
-	module.exports = NullPiece;
-
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-	
-	var ChessUnicode = __webpack_require__(5);
-	var Colors = __webpack_require__(2);
-	var Deltas = __webpack_require__(9);
+	var Deltas = __webpack_require__(7);
 	
 	var Bishop = function Bishop(color, pos, board) {
 	  this.color = color;
@@ -821,7 +759,7 @@
 	module.exports = Bishop;
 
 /***/ },
-/* 9 */
+/* 7 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -883,14 +821,14 @@
 	module.exports = Deltas;
 
 /***/ },
-/* 10 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var ChessUnicode = __webpack_require__(5);
 	var Colors = __webpack_require__(2);
-	var Deltas = __webpack_require__(9);
+	var Deltas = __webpack_require__(7);
 	
 	var Knight = function Knight(color, pos, board) {
 	  this.color = color;
@@ -913,14 +851,14 @@
 	module.exports = Knight;
 
 /***/ },
-/* 11 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var ChessUnicode = __webpack_require__(5);
 	var Colors = __webpack_require__(2);
-	var Deltas = __webpack_require__(9);
+	var Deltas = __webpack_require__(7);
 	
 	var Rook = function Rook(color, pos, board) {
 	  this.color = color;
@@ -946,7 +884,7 @@
 	module.exports = Rook;
 
 /***/ },
-/* 12 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1049,14 +987,14 @@
 	module.exports = Pawn;
 
 /***/ },
-/* 13 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var ChessUnicode = __webpack_require__(5);
 	var Colors = __webpack_require__(2);
-	var Deltas = __webpack_require__(9);
+	var Deltas = __webpack_require__(7);
 	
 	var King = function King(color, pos, board) {
 	  this.color = color;
@@ -1080,14 +1018,14 @@
 	module.exports = King;
 
 /***/ },
-/* 14 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	var ChessUnicode = __webpack_require__(5);
 	var Colors = __webpack_require__(2);
-	var Deltas = __webpack_require__(9);
+	var Deltas = __webpack_require__(7);
 	
 	var Queen = function Queen(color, pos, board) {
 	  this.color = color;
@@ -1112,7 +1050,21 @@
 	module.exports = Queen;
 
 /***/ },
-/* 15 */
+/* 13 */
+/***/ function(module, exports) {
+
+	'use strict';
+	
+	var MOVE_RESULTS = {
+	  SUCCESS: 'successful move',
+	  FAILURE: 'invalid move',
+	  CHECKMATE: 'checkmate'
+	};
+	
+	module.exports = MOVE_RESULTS;
+
+/***/ },
+/* 14 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1124,6 +1076,65 @@
 	};
 	
 	module.exports = HelperMethods;
+
+/***/ },
+/* 15 */
+/***/ function(module, exports) {
+
+	"use strict";
+	
+	var Clock = function Clock(minutes, renderWon, clockDisplay) {
+	  //need 15:00 to render.  try to do this in her
+	  this.seconds = minutes * 60;
+	  this.renderWon = renderWon;
+	  this.isRunning = false;
+	  this.clockDisplay = clockDisplay;
+	  this.renderDisplay();
+	};
+	
+	Clock.prototype.start = function () {
+	  var _this = this;
+	
+	  this.isRunning = true;
+	  this.intervalId = setInterval(function () {
+	    _this.seconds--;
+	    _this.checkForExpiration();
+	    _this.renderDisplay();
+	  }, 1000);
+	};
+	
+	Clock.prototype.toggleRunning = function () {
+	  if (this.isRunning) {
+	    this.stop();
+	  } else {
+	    this.start();
+	  }
+	};
+	
+	Clock.prototype.stop = function () {
+	  this.isRunning = false;
+	  clearInterval(this.intervalId);
+	};
+	
+	Clock.prototype.renderDisplay = function () {
+	  var minutes = Math.floor(this.seconds / 60);
+	  var seconds = this.seconds % 60;
+	
+	  var minutesString = minutes > 0 ? "" + minutes : "" + 0;
+	  var secondsString = seconds > 9 ? "" + seconds : "0" + seconds;
+	  var displayString = minutesString + ":" + secondsString;
+	
+	  this.clockDisplay.innerHTML = displayString;
+	};
+	
+	Clock.prototype.checkForExpiration = function () {
+	  if (this.seconds <= 0) {
+	    this.stop();
+	    this.renderWon();
+	  }
+	};
+	
+	module.exports = Clock;
 
 /***/ }
 /******/ ]);
