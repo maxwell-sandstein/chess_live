@@ -18,6 +18,27 @@
   cursor: pointer;
 }
 
+.black-to-move{
+  -ms-transform: rotate(180deg); /* IE 9 */
+  -webkit-transform: rotate(180deg); /* Safari */
+  transform: rotate(180);
+}
+
+.chess-board li span {
+  position: absolute;
+  display: block;
+  left: 7px;
+  bottom: 1px;
+}
+
+.black-to-move li span{
+  -ms-transform: rotate(180deg); /* IE 9 */
+  -webkit-transform: rotate(180deg); /* Safari */
+  transform: rotate(180);
+  left: 8px;
+  bottom: -4px;
+}
+
 .chess-board li {
   display: block;
   float: left;
@@ -29,13 +50,6 @@
   box-sizing: border-box;
   padding-bottom: 10px;
   position: relative;
-}
-
-.chess-board li span {
-  position: absolute;
-  display: block;
-  left: 7px;
-  bottom: 1px;
 }
 
 .main{
@@ -175,13 +189,13 @@ body{
   font-size: 32px;
 }
 
-.black-clock{
+.just-moved-clock{
   position: absolute;
   top: 18px;
   left: 226px;
 }
 
-.white-clock{
+.to-move-clock{
   position: absolute;
   top: 542px;
   right: 226px;

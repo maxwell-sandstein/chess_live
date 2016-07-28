@@ -82,10 +82,10 @@
 	
 	function createClockDisplays() {
 	  this.blackClockDisplay = document.createElement('div');
-	  this.blackClockDisplay.className = 'black-clock clock-display';
+	  this.blackClockDisplay.className = 'just-moved-clock clock-display';
 	
 	  this.whiteClockDisplay = document.createElement('div');
-	  this.whiteClockDisplay.className = 'white-clock clock-display';
+	  this.whiteClockDisplay.className = 'to-move-clock clock-display';
 	
 	  this.mainEl.appendChild(this.whiteClockDisplay);
 	  this.mainEl.appendChild(this.blackClockDisplay);
@@ -219,6 +219,8 @@
 	  this.unselectPiece();
 	  this.render();
 	  this.changeToMove();
+	  this.flipBoard();
+	  this.flipClocks();
 	};
 	
 	View.prototype.demandPawnPromotion = function (pos) {
@@ -283,6 +285,15 @@
 	
 	View.prototype.changeToMove = function () {
 	  this.toMove = this.toMove === Colors.WHITE ? Colors.BLACK : Colors.WHITE;
+	};
+	
+	View.prototype.flipBoard = function () {
+	  this.chessBoardDisplay.className = this.chessBoardDisplay.className === "chess-board" ? "chess-board black-to-move" : "chess-board";
+	};
+	
+	View.prototype.flipClocks = function () {
+	  this.whiteClockDisplay.className = this.whiteClockDisplay.className === "to-move-clock clock-display" ? "just-moved-clock clock-display" : "to-move-clock clock-display";
+	  this.blackClockDisplay.className = this.blackClockDisplay.className === "to-move-clock clock-display" ? "just-moved-clock clock-display" : "to-move-clock clock-display";
 	};
 	
 	View.prototype.renderWon = function () {
